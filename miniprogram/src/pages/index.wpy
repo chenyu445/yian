@@ -1,0 +1,177 @@
+<style lang="less">
+  .index{
+    background-color:#f2f2f2;
+    .weui-cells__title{
+      color: #333;
+      font-size: 16px;
+      padding-top:20rpx
+    }
+    .weui-cell__bd{
+      display:block;                     /*内联对象需加*/
+      // width:31em;
+      font-size: 14px;
+      word-break:keep-all;           /* 不换行 */
+      white-space:nowrap;          /* 不换行 */
+      overflow:hidden;               /* 内容超出宽度时隐藏超出部分的内容 */
+      text-overflow:ellipsis;
+    }
+  }
+</style>
+<template>
+  <view class="index">
+    <view class="weui-search-bar">
+      <view class="weui-search-bar__form">
+        <view class="weui-search-bar__box">
+          <icon class="weui-icon-search_in-box" type="search" size="14"></icon>
+          <input type="text" class="weui-search-bar__input" placeholder="搜索"  />
+        </view>
+        <label class="weui-search-bar__label"  bindtap="gotoSearch">
+          <icon class="weui-icon-search" type="search" size="14"></icon>
+          <view class="weui-search-bar__text">搜索</view>
+        </label>
+      </view>
+      <view class="weui-search-bar__cancel-btn" hidden="{{!inputShowed}}" bindtap="hideInput">取消</view>
+    </view>
+    <view class="weui-cells__title" wx:if="{{list.length != 0}}">议案列表</view>
+    <view class="weui-cells weui-cells_after-title" wx:if="{{list.length != 0}}">
+      <view class="weui-cell weui-cell_access" >
+        <view class="weui-cell__bd" style="color:#999">标题</view>
+        <view class="weui-cell__ft " style="padding-right:40rpx;font-size:14px;">时间</view>
+      </view>
+      <view class="weui-cell weui-cell_access" wx:for="{{list}}" wx:for-item="justice" wx:for-index="Index" wx:key="Index" @tap="gotoDetail({{justice}})">
+        <view class="weui-cell__bd">{{justice.title}}</view>
+        <view class="weui-cell__ft ">{{justice.time}}</view>
+      </view>
+    </view>
+    <view class="weui-cells__title"  wx:if="{{proposalList.length != 0}}">建议列表</view>
+    <view class="weui-cells weui-cells_after-title" wx:if="{{proposalList.length != 0}}">
+      <view class="weui-cell weui-cell_access">
+        <view class="weui-cell__bd" style="color:#999">标题</view>
+        <view class="weui-cell__ft " style="padding-right:40rpx;font-size:14px;">时间</view>
+      </view>
+      <view class="weui-cell weui-cell_access" wx:for="{{proposalList}}" wx:for-item="justice" wx:for-index="Index" wx:key="Index" @tap="gotoDetail({{justice}})">
+        <view class="weui-cell__bd">{{justice.title}}</view>
+        <view class="weui-cell__ft ">{{justice.time}}</view>
+      </view>
+    </view>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import { connect } from 'wepy-redux'
+  import testMixin from '../mixins/test'
+  import caseService from '@/api/caseService'
+
+  function timeStampToDate ( string) { // 时间戳转换成"yy-mm-dd"
+    var date = new Date(string)
+    var year = date.getFullYear() + '-'
+    var mouth = (date.getMonth() + 1 < 10 ? '0' + (date.getMonth() + 1) : date.getMonth() + 1) + '-'
+    var day = date.getDate() < 10 ? '0' + date.getDate() + ' ' : date.getDate() + ' '
+    var newDate = year + mouth + day
+    return newDate
+  }
+  @connect({
+    num (state) {
+      return state.counter.num
+    },
+    asyncNum (state) {
+      return state.counter.asyncNum
+    },
+    sumNum (state) {
+      return state.counter.num + state.counter.asyncNum
+    }
+  })
+
+  export default class Index extends wepy.page {
+    config = {
+      navigationBarTitleText: '洪山区人大议案与建议公示'
+    }
+    components = {
+      
+    }
+
+    mixins = [testMixin]
+
+    data = {
+      list:[],
+      proposalList:[],
+      totalProposalList:[],
+      currentpage:0
+    }
+
+    computed = {
+      
+    }
+
+    methods = {
+      gotoDetail(params){
+        // debugger
+        wepy.navigateTo({
+          url:'detail?id='+params.id
+        })
+      },
+      gotoSearch(){
+        wepy.navigateTo({
+          url:'search'
+        })
+      }
+    }
+
+    events = {
+      
+    }
+
+    onLoad() {
+      let self = this
+      caseService.caselist({type:'bill'}).then(res=>{
+        console.log(res)
+        self.list = res.rows
+        self.list.forEach(el => {
+          el.time = timeStampToDate(el.updatedAt)
+        });
+        self.$apply()
+      })
+      caseService.caselist({type:'proposal'}).then(res=>{
+        console.log(res)
+        self.totalProposalList = []
+        self.proposalList=[]
+        var tmpproposalList = res.rows
+        tmpproposalList.forEach(el => {
+          el.time = timeStampToDate(el.updatedAt)
+        });
+        self.totalProposalList = tmpproposalList
+        self.proposalList = self.totalProposalList.slice(0,self.currentpage*10+10)
+        // var size = 10
+        // if(res.count > 0){
+        //   var totalPageNum = Math.ceil(res.count/size)
+        //   for(var i = 0 ; i < totalPageNum; i++){
+        //     var curr = i * size
+        //     var newA = []
+        //     // if )
+        //     var currentLarg = (i +1) * size > res.count ? res.count : (i +1) * size
+        //     for(var j = i * size ; j < currentLarg; j++ ){
+        //       newA.push(tmpproposalList[j])
+        //     }
+        //     self.totalProposalList.push(newA)
+        //   }
+        //   self.proposalList = self.totalProposalList[self.currentpage]
+        //   console.log('self.proposalList',self.proposalList)
+        //   self.$apply()
+        // }
+        
+        // totalProposalList.proposalList = res.rows
+        // totalProposalList.proposalList.forEach(el => {
+        //   el.time = timeStampToDate(el.updatedAt)
+        // });
+        self.$apply()
+      })
+    }
+    onReachBottom(){
+      var self = this
+      self.currentpage = self.currentpage+1
+      self.proposalList = self.totalProposalList.slice(0,self.currentpage*10+10)
+      self.$apply()
+    }
+  }
+</script>

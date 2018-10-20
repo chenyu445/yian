@@ -1,0 +1,165 @@
+<style lang="less">
+  .detail{
+    padding:20rpx 40rpx;
+    .page__title{
+      // padding:20rpx 40rpx;
+      font-size: 24px;
+      text-align: center;
+    }
+    .page__desc{
+      color: #999;
+      text-align: center;
+    }
+    .progressBox{
+      padding-left: 40rpx;
+    }
+    .progress{
+      border-left: 1px solid #ccc;
+      position: relative;
+      padding: 10rpx 30rpx;
+      &::before{
+        content: '';
+        position:absolute;
+        top: 0;
+        left: -10rpx;
+        width:20rpx;
+        height: 20rpx;
+        border-radius: 50%;
+        background-color: green;
+        
+      }
+      .info{
+        color: #999;
+        text{
+          padding-right:20rpx;
+        }
+      }
+    }
+    
+  }
+</style>
+<template>
+<view class="detail">
+  <view class="page__hd">
+    <view class="page__title">{{title}}</view>
+    <view class="page__desc">{{time}}</view>
+  </view>
+  <view class="page__bd">
+    <view class="weui-article" wx:if="{{!loading}}">
+        <!-- <view class="weui-article__h1">{{title}}</view> -->
+        <view class="weui-article__section progressBox">
+          <view class="progress" wx:if="{{progress.length !== 0}}" wx:for="{{progress}}" wx:for-item="prog" wx:for-index="Index" wx:key="Index">
+            <view class="info">
+              <text>{{prog.time}}</text>
+              <text>{{prog.author}}</text>
+            </view>
+            <view class="weui-article__title">
+              {{prog.status}}
+            </view>
+            <view>
+              {{prog.desc}}
+            </view>
+          </view>
+          <view wx:if="{{progress.length === 0}}">暂无进度</view>
+        </view>
+    </view>
+    <view wx:if="{{loading}}">正在加载</view>
+  </view>
+</view>
+  
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import { connect } from 'wepy-redux'
+  import testMixin from '../mixins/test'
+  import caseService from '@/api/caseService'
+  import deparmentService from '@/api/departments'
+
+  function timeStampToDate ( string) { // 时间戳转换成"yy-mm-dd"
+    var date = new Date(string)
+    var year = date.getFullYear() + '-'
+    var mouth = (date.getMonth() + 1 < 10 ? '0' + (date.getMonth() + 1) : date.getMonth() + 1) + '-'
+    var day = date.getDate() < 10 ? '0' + date.getDate() + ' ' : date.getDate() + ' '
+    var newDate = year + mouth + day
+    return newDate
+  }
+
+  export default class Detail extends wepy.page {
+    config = {
+      navigationBarTitleText: '洪山人大议案建议'
+    }
+    components = {
+      
+    }
+
+    data = {
+      title: '',
+      time: '',
+      progress:[
+      
+      ],
+      loading:true
+    }
+
+    computed = {
+      
+    }
+
+    methods = {
+      getCaseInfo(option,self){
+        var statuslist = {
+                          'unpublished':'未发布', 
+                          'published':'已发布', 
+                          'reply':'已回复', 
+                          'finished':'已完成'
+                        }
+        caseService.getCaseById(option.id).then(res=>{
+            // console.log('getCaseById', res)
+            self.title = res.title
+            self.time = timeStampToDate(res.createdAt)
+            // deparmentService.getDepartmentById
+            // self.progress = []
+            self.$apply()
+        })
+        caseService.getUpdateCaseById(option.id).then(res=>{
+            // console.log('getCaseById', res)
+            // self.title = res.title
+            // self.time = timeStampToDate(res.createdAt)
+            self.progress = []
+            res.rows.forEach(el => {
+              deparmentService.getDepartmentById(el.departmentId).then(dept=>{
+                
+                var pro = {
+                  status :statuslist[el.operation],
+                  time: timeStampToDate(el.updatedAt),
+                  author:dept.name,
+                  desc: el.content
+                }
+                self.progress.push(pro)
+                self.loading = false
+                console.log('loadinbg', self.loading)
+                self.$apply()
+              })
+            });
+            self.loading = false
+            console.log('loadinbg', self.loading)
+            self.$apply()
+            console.log('self.progress', self.progress)
+            
+        },err=>{
+          console.log('err')
+        })
+      }
+    }
+
+    events = {
+      
+    }
+
+    onLoad(option) {
+      // debugger
+      this.methods.getCaseInfo(option,this)
+    }
+  }
+</script>

@@ -1,0 +1,85 @@
+<style>
+.searchbar-result{
+    margin-top: 0;
+    font-size: 14px;
+}
+.searchbar-result:before{
+    display: none;
+}
+.weui-cell{
+    padding: 12px 15px 12px 35px;
+}
+</style>
+<template>
+    <view class="page">
+        <view class="page__bd">
+            <view class="weui-search-bar">
+                <view class="weui-search-bar__form">
+                    <view class="weui-search-bar__box">
+                        <icon class="weui-icon-search_in-box" type="search" size="14"></icon>
+                        <input type="text" class="weui-search-bar__input" placeholder="搜索" value="{{inputVal}}" focus="{{inputShowed}}" bindinput="inputTyping" />
+                        <view class="weui-icon-clear" wx:if="{{inputVal.length > 0}}" bindtap="clearInput">
+                            <icon type="clear" size="14"></icon>
+                        </view>
+                    </view>
+                    <label class="weui-search-bar__label" hidden="{{inputShowed}}" bindtap="showInput">
+                        <icon class="weui-icon-search" type="search" size="14"></icon>
+                        <view class="weui-search-bar__text">搜索</view>
+                    </label>
+                </view>
+                <view class="weui-search-bar__cancel-btn" hidden="{{!inputShowed}}" bindtap="hideInput">取消</view>
+            </view>
+            <view class="weui-cells searchbar-result" wx:if="{{inputVal.length > 0}}">
+                <navigator wx:for="{{resultList}}" wx:for-item="item" wx:for-index="Index" url="{{'/pages/detail?id='+item.id}}" class="weui-cell" hover-class="weui-cell_active">
+                    <view class="weui-cell__bd">
+                        <view>{{item.title}}</view>
+                    </view>
+                </navigator>
+            </view>
+        </view>
+    </view>
+</template>
+
+<script>
+    import wepy from 'wepy';
+  import caseService from '@/api/caseService'
+
+    export default class Searchbar extends wepy.page {
+        config = {
+          navigationBarTitleText: '洪山区人大议案与建议公示'
+        }
+        data = {
+            inputShowed: true,
+            inputVal: '',
+            resultList:[]
+        };
+
+        methods = {
+            showInput () {
+                this.inputShowed = true;
+            },
+            hideInput () {
+                // this.inputVal = '';
+                // this.inputShowed = false;
+                wepy.navigateBack({
+                  delta: 1
+                });
+            },
+            clearInput () {
+                this.inputVal = '';
+            },
+            inputTyping (e) {
+                this.inputVal = e.detail.value;
+                console.log(this.inputVal)
+                if(this.inputVal){
+                    caseService.caselist({title:this.inputVal}).then(res=>{
+                        console.log('res',res)
+                        this.resultList = res.rows
+                        this.$apply()
+                    })
+                }
+                
+            }
+        }
+    }
+</script>
