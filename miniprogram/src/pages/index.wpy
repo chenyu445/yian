@@ -132,7 +132,7 @@
         });
         self.$apply()
       })
-      caseService.caselist({type:'proposal'}).then(res=>{
+      caseService.caselist({type:'proposal',limit:10,page:0}).then(res=>{
         console.log(res)
         self.totalProposalList = []
         self.proposalList=[]
@@ -141,36 +141,29 @@
           el.time = timeStampToDate(el.updatedAt)
         });
         self.totalProposalList = tmpproposalList
-        self.proposalList = self.totalProposalList.slice(0,self.currentpage*10+10)
-        // var size = 10
-        // if(res.count > 0){
-        //   var totalPageNum = Math.ceil(res.count/size)
-        //   for(var i = 0 ; i < totalPageNum; i++){
-        //     var curr = i * size
-        //     var newA = []
-        //     // if )
-        //     var currentLarg = (i +1) * size > res.count ? res.count : (i +1) * size
-        //     for(var j = i * size ; j < currentLarg; j++ ){
-        //       newA.push(tmpproposalList[j])
-        //     }
-        //     self.totalProposalList.push(newA)
-        //   }
-        //   self.proposalList = self.totalProposalList[self.currentpage]
-        //   console.log('self.proposalList',self.proposalList)
-        //   self.$apply()
-        // }
-        
-        // totalProposalList.proposalList = res.rows
-        // totalProposalList.proposalList.forEach(el => {
-        //   el.time = timeStampToDate(el.updatedAt)
-        // });
+        self.proposalList = JSON.parse(JSON.stringify(tmpproposalList))
         self.$apply()
       })
     }
     onReachBottom(){
       var self = this
       self.currentpage = self.currentpage+1
-      self.proposalList = self.totalProposalList.slice(0,self.currentpage*10+10)
+      console.log('reach bottom')
+      wepy.showLoading({
+        title:'正加载...',
+        nask: true
+      })
+      caseService.caselist({type:'proposal',limit:10,page:self.currentpage}).then(res=>{
+        // console.log(res)
+        var tmpproposalList = res.rows
+        tmpproposalList.forEach(el => {
+          el.time = timeStampToDate(el.updatedAt)
+          self.proposalList.push(el)
+        });
+        self.$apply()
+        wepy.hideLoading()
+        
+      })
       self.$apply()
     }
   }
