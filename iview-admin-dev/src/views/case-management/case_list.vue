@@ -9,28 +9,44 @@
                 <div class="step-header-con">
                     <h3>议案与建议列表</h3>
                 </div>
-                
-                <div class="product-search-btn">
-                    <Button style="width:80px;" type="primary" @click="add">
-                        <Icon type="plus-round" size="17"></Icon>添加
-                    </Button>
-                </div>
-                <div class="product-search-result">
-                    <Table  
-                            ref="product-list"
-                            :columns="businessList"
-                            :data="businessData"
-                            highlight-row
-                            border
-                    ></Table>
-                    <div style="margin:10px;overflow:hidden;">
-                        <div>
-                            <Page :total="page.total" :page-size="page.pageSize" :current="page.current" @on-change="changePage" @on-page-size-change="pageSizeChange" show-total show-elevator show-sizer></Page>
-                        </div>
-                    </div>
-                </div>
             </Col>
         </Row>
+        <Form ref="formValidate" :model="query"  :label-width="80" inline>
+            <FormItem label="类型"  >
+                <Select v-model="query.type" placeholder="类型" @on-change="typeChange">
+                    <Option value="">全部</Option>
+                    <Option value="bill">议案</Option>
+                    <Option value="proposal">建议</Option>
+                </Select>
+            </FormItem>
+            <FormItem label="名称" >
+                <Input style="min-width:300px" v-model="query.title" placeholder="请输入标题"></Input>
+            </FormItem>
+            <FormItem >
+                <Button style="width:80px;" type="primary" @click="search">
+                    <Icon type="plus-round" size="17"></Icon>搜索
+                </Button>
+            </FormItem>
+        </Form>
+        <div class="product-search-btn">
+            <Button style="width:80px;" type="primary" @click="add">
+                <Icon type="plus-round" size="17"></Icon>添加
+            </Button>
+        </div>
+        <div class="product-search-result">
+            <Table  
+                    ref="product-list"
+                    :columns="businessList"
+                    :data="businessData"
+                    highlight-row
+                    border
+            ></Table>
+            <div style="margin:10px;overflow:hidden;">
+                <div>
+                    <Page :total="total" :page-size="page.limit" :current="page.page" @on-change="changePage" @on-page-size-change="pageSizeChange" show-total show-elevator show-sizer></Page>
+                </div>
+            </div>
+        </div>
     </div>
 </template>
 <script>
@@ -42,7 +58,6 @@
         data () {
             return {
                 businessList: [
-                    
                     {
                         type: 'index',
                         width: 60,
@@ -143,47 +158,66 @@
                         }
                     }
                 ],
-                businessData: [
-                    
-                    
-                ],
+                businessData: [],
+                total:0,
                 page:{
-                    total:0,
-                    current:1,
-                    pageSize:10
+                    page:1,
+                    limit:10
                 },
                 query:{
                     type:'',
-                    name:'',
-                    start_time:'',
-                    end_time:''
+                    title:''
                 },
                 deparmentList:[]
             };
         },
         
         methods: {
-            changePage() {
-
+            changePage(page) {
+                this.page.page = page
+                var params = {
+                    limit:this.page.limit,
+                    page:page-1
+                }
+                this.initpage(params)
             },
             pageSizeChange(size){
-
+                console.log(size)
+                this.page.limit = size
+                var params = {
+                    limit:size,
+                    page:this.page.page -1
+                }
+                this.initpage(params)
+            },
+            typeChange(type){
+                this.initpage()
             },
             search(){
-
+                this.initpage()
             },
-            initpage(){
+            initpage(arg){
                 var role = Cookies.get('userInfo').role
+                var params = {
+                    limit: this.page.limit,
+                    page:this.page.page-1    
+                }
+                params = Object.assign(params,this.query)
+                if(arg){
+                    params = Object.assign(params,this.query,arg)
+                }
+                console.log('params',params)
+                
                 if(role!='admin'){
-                    caseService.caselist().then(res=>{
-                        console.log(res)
-                        this.page.total = res.count
+                    caseService.caselist(params).then(res=>{
+                        // console.log(res)
+                        this.total = res.count
                         this.businessData = JSON.parse(JSON.stringify(res.rows))
                     })
                 }else{
-                    caseService.caselist().then(res=>{
-                        console.log(res)
-                        this.page.total = res.count
+                    caseService.caselist(params).then(res=>{
+                        // console.log(res)
+                        this.total = res.count
                         this.businessData = JSON.parse(JSON.stringify(res.rows))
                     })
                 }
@@ -228,7 +262,7 @@
         },
         created(){
             deparmentService.departments().then(res=>{
-                console.log(res)
+                // console.log(res)
                 this.page.total = res.count
                 this.deparmentList = JSON.parse(JSON.stringify(res.rows))
             })

@@ -14,7 +14,7 @@ const service = axios.create({
 // request拦截器
 service.interceptors.request.use(config => {
     // var
-    console.log('request', config);
+    // console.log('request', config);
     if (config.url != '/auth/login') {
         config.headers.Authorization = Cookies.get('token');
     }

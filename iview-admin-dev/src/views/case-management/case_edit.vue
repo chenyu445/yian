@@ -19,7 +19,7 @@
                 </RadioGroup>
             </FormItem>
             <FormItem label="主办单位" prop="departmentIds">
-                <Select v-model="formValidate.departmentId" placeholder="主办单位">
+                <Select v-model="formValidate.departmentId" placeholder="主办单位" filterable>
                     <Option v-for="(dept ,index) in departmentsList" :key="index" :value="dept.id">{{dept.name}}</Option>
                 </Select>
             </FormItem>
